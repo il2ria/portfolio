@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDB — PORTFOLIO</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: #c8c8c8;
+  color: #2a2a2a;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  line-height: 1.5;
+  cursor: crosshair;
+  overflow-x: hidden;
+}
+
+/* CRT scanlines - behind all content */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Blocca scanlines sulle immagini */
+.proj-img {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+@keyframes flicker {
+  0%,100%{opacity:1} 93%{opacity:0.93} 96%{opacity:0.97}
+}
+body { animation: flicker 8s infinite; }
+
+/* ── TOPBAR ── */
+#topbar {
+  position: fixed;
+  top:0; left:0; right:0;
+  z-index: 99999;
+  background: #2a2a2a;
+  color: #ffffff;
+  padding: 4px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  border-bottom: 2px solid #0000ff;
+}
+#topbar .left { color: #0000ff; letter-spacing: 3px; font-size: 17px; }
+#topbar .right { color: #0000ff; font-size: 14px; }
+#topbar nav { display: flex; }
+#topbar nav a {
+  color: #cccccc;
+  text-decoration: none;
+  padding: 0 16px;
+  border-left: 1px solid #333;
+  font-size: 15px;
+  letter-spacing: 2px;
+  transition: background 0.1s, color 0.1s;
+}
+#topbar nav a:hover { background: #0000ff; color: #fff; }
+
+/* ── LAYOUT ── */
+section { padding: 60px 0 40px; background: #c8c8c8; }
+.container { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+/* ── HERO ── */
+#hero {
+  padding-top: 80px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-ascii {
+  color: #555555;
+  font-size: 15px;
+  line-height: 1.2;
+  white-space: pre;
+  margin-bottom: 32px;
+  opacity: 0;
+  animation: fadein 0.6s 0.2s forwards;
+}
+
+.hero-title {
+  font-size: clamp(40px, 7vw, 80px);
+  color: #2a2a2a;
+  letter-spacing: 2px;
+  line-height: 1.0;
+  opacity: 0;
+  animation: fadein 0.6s 0.4s forwards;
+}
+.hero-title .blue { color: #0000ff; }
+
+.hero-sub {
+  margin-top: 16px;
+  font-size: 20px;
+  color: #555555;
+  letter-spacing: 1px;
+  opacity: 0;
+  animation: fadein 0.6s 0.6s forwards;
+}
+
+.hero-meta {
+  margin-top: 28px;
+  display: flex;
+  width: fit-content;
+  border: 1px solid #333333;
+  opacity: 0;
+  animation: fadein 0.6s 0.8s forwards;
+}
+.hero-meta-cell {
+  padding: 8px 22px;
+  border-right: 1px solid #333333;
+  background: #2a2a2a;
+}
+.hero-meta-cell:last-child { border-right: none; }
+.hero-meta-cell .k { color: #666666; font-size: 11px; display: block; letter-spacing: 1px; }
+.hero-meta-cell .v { color: #ffffff; font-size: 16px; }
+
+@keyframes blink { 50%{opacity:0} }
+.blink { animation: blink 1s step-end infinite; }
+
+/* ── SECTION HEADER ── */
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #888888;
+}
+.sec-num { color: #888888; font-size: 15px; }
+.sec-title { color: #0000ff; font-size: 24px; letter-spacing: 3px; text-transform: uppercase; }
+.sec-line { flex:1; height:1px; background: #888888; }
+
+/* ── PROJECTS ── */
+.project-entry {
+  border: 1px solid #888888;
+  margin-bottom: 3px;
+  opacity: 1;
+  transform: none;
+  transition: border-color 0.15s;
+}
+.project-entry.visible { opacity:1; transform:translateY(0); }
+.project-entry:hover { border-color: #0000ff; }
+
+.proj-header {
+  display: grid;
+  grid-template-columns: 48px 1fr auto auto;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: #3a3a3a;
+  gap: 12px;
+}
+.proj-header:hover { background: #2a2a2a; }
+
+.proj-num  { color: #555555; font-size: 15px; }
+.proj-name { font-size: 28px; color: #ffffff; letter-spacing: 1px; }
+.project-entry:hover .proj-name { color: #0000ff; }
+.proj-year { color: #666666; font-size: 15px; white-space: nowrap; }
+.proj-toggle { color: #0000ff; font-size: 22px; transition: transform 0.2s; margin-left: 8px; }
+.project-entry.open .proj-toggle { transform: rotate(90deg); }
+
+.proj-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.tag {
+  font-size: 12px;
+  padding: 1px 7px;
+  border: 1px solid #444444;
+  color: #888888;
+}
+.project-entry:hover .tag { border-color: #0000ff; color: #0000ff; }
+
+.proj-body {
+  display: none;
+  padding: 24px 40px;
+  border-top: 1px solid #333333;
+  background: #3a3a3a;
+}
+.project-entry.open .proj-body { display: block; }
+
+.proj-meta {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.proj-detail-row { font-size: 16px; }
+.proj-detail-row .k { color: #0000ff; margin-right: 8px; }
+.proj-detail-row .v { color: #cccccc; }
+
+.proj-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: #aaaaaa;
+  line-height: 1.85;
+  margin-bottom: 24px;
+  max-width: 640px;
+}
+
+.proj-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.proj-img {
+  overflow: hidden;
+  isolation: isolate;
+  aspect-ratio: 4/5;
+}
+.proj-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* placeholder quando non c'è ancora l'immagine */
+.proj-img-inner {
+  width: 100%;
+  aspect-ratio: 4/5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.img-cross { width: 18px; height: 18px; position: relative; }
+.img-cross::before, .img-cross::after {
+  content:''; position:absolute; background: #444444;
+}
+.img-cross::before { width:1px; height:100%; left:50%; top:0; }
+.img-cross::after  { width:100%; height:1px; top:50%; left:0; }
+.img-lbl { font-size: 11px; color: #444444; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── ABOUT ── */
+#about { background: #c8c8c8; }
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 48px;
+}
+
+.about-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: #2e2e2e;
+  line-height: 1.85;
+  margin-bottom: 14px;
+}
+.about-text strong { color: #000000; font-weight: normal; }
+
+.about-table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+.about-table tr { border-bottom: 1px solid #999999; }
+.about-table td { padding: 8px 0; font-size: 16px; }
+.about-table td:first-child { color: #0000ff; width: 120px; font-size: 13px; letter-spacing: 1px; }
+.about-table td:last-child { color: #2a2a2a; }
+
+.about-portrait {
+  border: 1px solid #888888;
+  aspect-ratio: 3/4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  background: #aaaaaa;
+  color: #777777;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.about-portrait img { width:100%; height:100%; object-fit:cover; display:block; }
+
+/* ── CONTACT ── */
+#contact { background: #2a2a2a; }
+#contact .sec-title { color: #0000ff; }
+#contact .sec-num  { color: #444444; }
+#contact .sec-line { background: #333333; }
+#contact .sec-head { border-bottom-color: #333333; }
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+
+.contact-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #2e2e2e;
+  text-decoration: none;
+  color: #cccccc;
+  font-size: 19px;
+  letter-spacing: 1px;
+  transition: color 0.15s;
+}
+.contact-link:hover { color: #0000ff; }
+.contact-link span { color: #444444; font-size: 13px; }
+
+.footer-big {
+  font-size: clamp(36px, 6vw, 72px);
+  color: #cccccc;
+  line-height: 1;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.footer-copy { color: #444444; font-size: 13px; letter-spacing: 2px; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadein {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background: #c8c8c8; }
+::-webkit-scrollbar-thumb { background: #888888; }
+::-webkit-scrollbar-thumb:hover { background: #0000ff; }
+
+@media (max-width: 700px) {
+  .about-grid, .contact-grid { grid-template-columns: 1fr; }
+  .proj-images { grid-template-columns: 1fr; }
+  .hero-meta { flex-direction: column; }
+  .hero-meta-cell { border-right: none; border-bottom: 1px solid #333; }
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="left">IDB.EXE</div>
+  <nav>
+    <a href="#work">WORK</a>
+    <a href="#about">ABOUT</a>
+    <a href="#contact">CONTACT</a>
+  </nav>
+  <div class="right" id="clock">--:--:--</div>
+</div>
+
+<section id="hero">
+  <div class="container">
+
+    <div class="hero-title">
+      <span class="blue">ILARIA</span><br>
+      <span class="blue">DE BENEDETTO</span>
+    </div>
+    <div class="hero-sub">Research / Digital processes / Photography<span class="blink">_</span></div>
+
+  </div>
+</section>
+
+<section id="work">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">01/</span>
+      <span class="sec-title">Selected Work</span>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="project-entry" id="p1">
+      <div class="proj-header" onclick="toggleProj('p1')">
+        <span class="proj-num">01</span>
+        <div>
+          <div class="proj-name">ARCHAEOLOGY OF PRESENCE</div>
+        </div>
+        <span class="proj-year">2026</span>
+        <span class="proj-toggle">▶</span>
+      </div>
+      <div class="proj-body">
+        <p class="proj-desc">Archaeology of Presence emerges from a personal unease toward biometric technologies and a theoretical interest in the historical logic of identification. From Alphonse Bertillon's anthropometric measurements to contemporary facial recognition systems, the methods evolve but the underlying impulse remains: control through measurement, identity through capture.<br><br>The project intervenes in this logic by sabotaging photogrammetry from within. By manipulating reference points and destabilizing the reconstruction process, it forces the machine to misinterpret the body it attempts to stabilize. What the system produces is not an accurate model but a fragmented residue: bodies dissolve into computational debris, into surfaces that appear decomposed rather than measured.<br><br>This failure becomes the core of the work. Like an archaeologist excavating ruins, the project uncovers what remains after the technological attempt to fix presence in space, revealing instability where there should be certainty, fragmentation where there should be identity. What persists are traces of an encounter between body and algorithm: evidence not of control, but of the impossibility of fully containing human presence within a system of measurement.<br><br>The project will be published by LyricalMyricalBooks in April 2026.</p>
+        <div class="proj-images">
+          <div class="proj-img"><img src="AOP_13.jpg" alt=""></div>
+          <div class="proj-img"><img src="AOP_16.jpg" alt=""></div>
+          <div class="proj-img"><img src="AOP_24.jpg" alt=""></div>
+          <div class="proj-img"><img src="AOP_77.jpg" alt=""></div>
+          <div class="proj-img"><img src="AOP_59.jpg" alt=""></div>
+          <div class="proj-img"><img src="AOP_23.jpg" alt=""></div>
+          <div class="proj-img"><img src="AOP_65.jpg" alt=""></div>
+          <div class="proj-img"><img src="AOP_74.jpg" alt=""></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-entry" id="p2">
+      <div class="proj-header" onclick="toggleProj('p2')">
+        <span class="proj-num">02</span>
+        <div>
+          <div class="proj-name">IR-Δ</div>
+        </div>
+        <span class="proj-year">2025</span>
+        <span class="proj-toggle">▶</span>
+      </div>
+      <div class="proj-body">
+        <p class="proj-desc">IR-Δ (Indeterminate Reality-Delta) explores the condition of contemporary imagery within a regime where the line between true and false has become unstable. The starting point is Operation Cue, a 1955 Cold War propaganda exercise in which a fictitious town was destroyed by a nuclear bomb and broadcast on national television. From this archival material, the project extends toward the present through images sourced online, processed through artificial intelligence and glitch techniques, and recomposed in layers that blend document, AI generation, and digital manipulation.<br><br>The theoretical framework draws on Baudrillard's concept of hyperreality, where representation no longer refers to a stable referent but generates its own. The use of artificial intelligence replicates the very processes through which reality is produced and legitimized within contemporary media systems. The delta of the title marks the continuous flux between experience and representation, document and simulation. IR-Δ doesn't attempt to bridge that distance but to expose its structure, working within the same ambiguity through which contemporary images produce reality.<br><br>July 2025 — 19 × 24 cm — Freelife paper — Soft cover — Swiss binding — 128 pages</p>
+        <div class="proj-images">
+          <div class="proj-img"><img src="IRD_book1.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD_book2.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD97.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD94.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD90.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD72.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD68.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD66.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD57.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD49.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD46.jpg" alt=""></div>
+          <div class="proj-img"><img src="IRD79.jpg" alt=""></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-entry" id="p3">
+      <div class="proj-header" onclick="toggleProj('p3')">
+        <span class="proj-num">03</span>
+        <div>
+          <div class="proj-name">IRL</div>
+        </div>
+        <span class="proj-year">2025</span>
+        <span class="proj-toggle">▶</span>
+      </div>
+      <div class="proj-body">
+        <p class="proj-desc">IRL examines the visual language of institutional power through the deliberate corruption of official political portraiture. Drawing from an archive of formal photographs, press releases, and state imagery, the project subjects carefully constructed representations of authority to a process of digital fragmentation and reconstruction.<br><br>The work engages with how the internet has transformed political imagery into raw material for ridicule and reappropriation: official portraits designed to project control are endlessly copied, distorted, and turned into memes, stripped of their intended gravitas. By fragmenting and layering these images, the project accelerates this process of degradation until the dignified facade dissolves into grotesque, glitched surfaces where authority is rendered absurd.<br><br>This collapse mirrors a broader erosion: when every image can be manipulated and every statement contradicted, the visual codes that once signified trust and credibility lose their power. The portraits become artifacts of their own obsolescence, caught between representation and dissolution, unable to command the respect they were designed to secure.<br><br>The project was presented as a portfolio review in Galleria d'Italia, Turin during Torino Photo Festival.</p>
+        <div class="proj-images">
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_03.jpg" alt=""></div>
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_02.jpg" alt=""></div>
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_04.jpg" alt=""></div>
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_05.jpg" alt=""></div>
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_08.jpg" alt=""></div>
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_14.jpg" alt=""></div>
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_18.jpg" alt=""></div>
+          <div class="proj-img"><img src="De_Benedetto_Ilaria_impaginato_15.jpg" alt=""></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="about">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">02/</span>
+      <span class="sec-title">About</span>
+      <div class="sec-line"></div>
+    </div>
+    <div class="about-grid">
+      <div>
+        <p class="about-text"><strong>Ilaria De Benedetto</strong> (b. 2002, Italy) is a visual artist and photographer whose practice investigates the shifting boundary between reality and simulation in contemporary image culture. Her work focuses on the construction of mediated realities, exploring how technologies, archives, and digital processes generate new forms of narrative, perception, and visual truth.</p>
+        <p class="about-text">Through photography, manipulation, and hybrid image-making strategies, she examines the ways contemporary media and technologies shape both the appearance of the world and the frameworks through which we interpret it.</p>
+        <table class="about-table">
+          <tr><td>EDUCATION</td><td>BA Photography — IED Rome, 2025</td></tr>
+          <tr><td>EXHIBITION</td><td>Gallerie d'Italia, Turin — 2025</td></tr>
+          <tr><td>PUBLICATION</td><td>Lyrical Myrical Books — 2026</td></tr>
+          <tr><td>TOOLS</td><td>Photoshop / InDesign / Metashape / AI</td></tr>
+          <tr><td>LOCATION</td><td>Rome, Italy</td></tr>
+        </table>
+      </div>
+      <div class="about-portrait">
+        <img src="AOP_48.jpg" alt="Ilaria De Benedetto">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="container">
+    <div class="sec-head">
+      <span class="sec-num">03/</span>
+      <span class="sec-title">Contact</span>
+      <div class="sec-line"></div>
+    </div>
+    <div class="contact-grid">
+      <div>
+        <a href="mailto:ilaria.debenedetto@gmail.com" class="contact-link">ilaria.debenedetto@gmail.com <span>→ EMAIL</span></a>
+        <a href="https://instagram.com/il2ria" class="contact-link">@il2ria <span>→ INSTAGRAM</span></a>
+        <a href="#" class="contact-link">CV on request <span>→ PDF</span></a>
+      </div>
+      <div>
+        <div class="footer-big">ILARIA<br>DE<br>BENEDETTO</div>
+        <div class="footer-copy">© 2026 — ALL RIGHTS RESERVED</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+function tick() {
+  document.getElementById("clock").textContent = new Date().toTimeString().slice(0,8);
+}
+setInterval(tick, 1000); tick();
+function toggleProj(id) {
+  document.getElementById(id).classList.toggle("open");
+}
+</script>
+</body>
+</html>
